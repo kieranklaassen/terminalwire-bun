@@ -18,6 +18,12 @@ export interface Message {
 type MessageHandler = (msg: Message) => void;
 type CloseHandler = (code: number) => void;
 type SendFunction = (data: Message) => void;
+type CloseFunction = () => void;
+
+export interface Connection {
+  send: SendFunction;
+  close: CloseFunction;
+}
 
 /**
  * Connect to a Terminalwire server.
@@ -25,13 +31,13 @@ type SendFunction = (data: Message) => void;
  * @param url - WebSocket URL to connect to
  * @param onMessage - Callback for incoming messages
  * @param onClose - Callback when connection closes
- * @returns Promise resolving to a send function
+ * @returns Promise resolving to connection with send and close functions
  */
 export async function connect(
   url: string,
   onMessage: MessageHandler,
   onClose: CloseHandler
-): Promise<SendFunction> {
+): Promise<Connection> {
   const debug = process.env.TERMINALWIRE_DEBUG === "1";
 
   return new Promise((resolve, reject) => {
@@ -43,10 +49,16 @@ export async function connect(
 
     socket.onopen = () => {
       if (debug) console.error("[DEBUG] WebSocket connected");
-      // Return send function on successful connection
-      resolve((data: Message) => {
-        if (debug) console.error(`[DEBUG] Sending: ${JSON.stringify(data).slice(0, 200)}`);
-        socket.send(encode(data));
+      // Return connection with send and close functions
+      resolve({
+        send: (data: Message) => {
+          if (debug) console.error(`[DEBUG] Sending: ${JSON.stringify(data).slice(0, 200)}`);
+          socket.send(encode(data));
+        },
+        close: () => {
+          if (debug) console.error("[DEBUG] Closing connection");
+          socket.close(1000, "Client requested close");
+        },
       });
     };
 

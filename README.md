@@ -61,6 +61,16 @@ Users can override the server URL at runtime:
 TERMINALWIRE_URL=ws://localhost:3000/terminal myapp login
 ```
 
+### Debugging
+
+Enable debug logging to trace WebSocket communication:
+
+```bash
+TERMINALWIRE_DEBUG=1 myapp login
+```
+
+This outputs to stderr: connection status, messages sent/received, and close events.
+
 ## Security
 
 The client enforces strict security:

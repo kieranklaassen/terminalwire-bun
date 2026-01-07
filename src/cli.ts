@@ -69,7 +69,7 @@ Exit Codes:
   // Connect and run
   let exitCode = 0;
 
-  const send = await connect(
+  const connection = await connect(
     url,
     async (msg) => {
       if (msg.event === "resource") {
@@ -78,9 +78,11 @@ Exit Codes:
           msg.command as string,
           (msg.parameters as Record<string, unknown>) || {}
         );
-        send(response);
+        connection.send(response);
       } else if (msg.event === "exit") {
         exitCode = msg.status as number;
+        // Server signals command complete - close connection
+        connection.close();
       }
     },
     (code) => {
@@ -93,7 +95,7 @@ Exit Codes:
   });
 
   // Send initialization message
-  send({
+  connection.send({
     event: "initialization",
     protocol: { version },
     entitlement: {
