@@ -1,0 +1,16 @@
+{
+  "name": "cora-cli",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run src/cli.ts",
+    "build": "bun run scripts/build.ts",
+    "build:local": "bun build --compile --minify --define BUILD_VERSION='\"1.0.0-dev\"' --define API_URL='\"wss://cora.computer/terminal\"' ./src/cli.ts --outfile ./dist/cora"
+  },
+  "dependencies": {
+    "@msgpack/msgpack": "^3.0.0"
+  },
+  "devDependencies": {
+    "bun-types": "latest"
+  }
+}
