@@ -3,6 +3,16 @@ name: Release
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      app_name:
+        description: "CLI name (e.g., myapp)"
+        required: true
+        default: "terminalwire"
+      default_url:
+        description: "Default server URL"
+        required: true
+        default: "wss://example.com/terminal"
 
 jobs:
   build:
@@ -22,7 +32,8 @@ jobs:
       - name: Build all platforms
         run: bun run build
         env:
-          API_URL: wss://cora.computer/terminal
+          APP_NAME: ${{ inputs.app_name || 'terminalwire' }}
+          DEFAULT_URL: ${{ inputs.default_url || 'wss://example.com/terminal' }}
           RELEASE: "true"
 
       - name: Create Release

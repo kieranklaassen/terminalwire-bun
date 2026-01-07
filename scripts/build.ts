@@ -1,11 +1,16 @@
 /**
- * Build script for CORA CLI
+ * Build script for Terminalwire Bun Client
  *
  * Cross-compiles for all supported platforms:
  * - darwin-arm64 (macOS Apple Silicon)
  * - darwin-x64 (macOS Intel)
  * - linux-x64 (Linux x86_64)
  * - linux-arm64 (Linux ARM64)
+ *
+ * Environment variables:
+ * - APP_NAME: Name of the CLI (default: "terminalwire")
+ * - DEFAULT_URL: Default server URL (default: "wss://example.com/terminal")
+ * - RELEASE: Set to "true" for release builds
  */
 
 import { $ } from "bun";
@@ -17,18 +22,18 @@ const targets = [
   { target: "bun-linux-arm64", suffix: "linux-arm64" },
 ];
 
+// Get configuration from environment
+const appName = process.env.APP_NAME || "terminalwire";
+const defaultUrl = process.env.DEFAULT_URL || "wss://example.com/terminal";
+const isRelease = process.env.RELEASE === "true";
+
 // Get version from git tags or use default
 const version = (
   await $`git describe --tags 2>/dev/null || echo "1.0.0"`.text()
 ).trim();
 
-const apiUrl = process.env.API_URL || "wss://cora.computer/terminal";
-const isRelease = process.env.RELEASE === "true";
-
-console.log(
-  `Building CORA CLI v${version} (${isRelease ? "release" : "dev"})`
-);
-console.log(`API URL: ${apiUrl}`);
+console.log(`Building ${appName} v${version} (${isRelease ? "release" : "dev"})`);
+console.log(`Default URL: ${defaultUrl}`);
 console.log();
 
 // Create dist directory
@@ -47,10 +52,12 @@ for (const { target, suffix } of targets) {
     `--define`,
     `BUILD_VERSION='"${version}"'`,
     `--define`,
-    `API_URL='"${apiUrl}"'`,
+    `DEFAULT_URL='"${defaultUrl}"'`,
+    `--define`,
+    `APP_NAME='"${appName}"'`,
     "./src/cli.ts",
     `--outfile`,
-    `./dist/cora-${suffix}`,
+    `./dist/${appName}-${suffix}`,
   ];
 
   // Dev builds get sourcemaps for debugging
@@ -74,7 +81,7 @@ for (const { target, suffix } of targets) {
 // Create tarballs for release
 console.log("\nPackaging...");
 for (const { suffix } of targets) {
-  await $`tar -czvf dist/${suffix}.tar.gz -C dist cora-${suffix}`;
+  await $`tar -czvf dist/${suffix}.tar.gz -C dist ${appName}-${suffix}`;
 }
 
 // Show results

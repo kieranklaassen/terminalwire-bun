@@ -1,5 +1,5 @@
 /**
- * Security module for CORA CLI
+ * Security module for Terminalwire Bun Client
  *
  * Provides path validation and environment variable allowlisting
  * to prevent path traversal attacks and unauthorized env access.
@@ -9,9 +9,9 @@ import { resolve } from "node:path";
 
 // Only allow reading these specific env vars
 const ALLOWED_ENV_VARS = new Set([
-  "CORA_API_TOKEN",
   "HOME",
   "TERMINALWIRE_HOME", // Required by Terminalwire protocol
+  "TERMINALWIRE_URL",  // URL override
 ]);
 
 /**
@@ -39,9 +39,11 @@ export function validatePath(path: string): string {
     throw new Error(`Access denied: path must be within home directory`);
   }
 
-  // Allowed directory: ~/.cora/
-  const coraDir = resolve(home, ".cora");
-  if (!normalized.startsWith(coraDir + "/") && normalized !== coraDir) {
+  // Get the allowed directory from TERMINALWIRE_HOME or default to ~/.terminalwire
+  const terminalwireHome = process.env.TERMINALWIRE_HOME || resolve(home, ".terminalwire");
+  const allowedDir = resolve(terminalwireHome);
+
+  if (!normalized.startsWith(allowedDir + "/") && normalized !== allowedDir) {
     throw new Error(`Access denied: ${path} is not in allowlist`);
   }
 

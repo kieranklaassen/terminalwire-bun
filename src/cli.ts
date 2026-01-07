@@ -1,17 +1,23 @@
 #!/usr/bin/env bun
 /**
- * CORA CLI - Terminalwire-compatible client
+ * Terminalwire Bun Client
  *
- * A Bun-based CLI that connects to the CORA server via WebSocket
- * using the Terminalwire protocol (MessagePack over WebSocket).
+ * A Bun-based client for connecting to any Terminalwire server.
+ * Can be compiled with different app names and default URLs.
  */
 
 import { connect } from "./client";
 import { handleResource } from "./resources";
 
-// Build-time constants injected by Bun
-declare const API_URL: string;
+// Build-time constants injected by Bun (with defaults for dev mode)
+declare const DEFAULT_URL: string;
 declare const BUILD_VERSION: string;
+declare const APP_NAME: string;
+
+// Use build-time constants or defaults
+const appName = typeof APP_NAME !== "undefined" ? APP_NAME : "terminalwire";
+const defaultUrl = typeof DEFAULT_URL !== "undefined" ? DEFAULT_URL : "ws://localhost:3000/terminal";
+const version = typeof BUILD_VERSION !== "undefined" ? BUILD_VERSION : "dev";
 
 async function main() {
   const args = process.argv.slice(2);
@@ -19,9 +25,9 @@ async function main() {
   // Handle version flag locally (with JSON support for agents)
   if (args.includes("--version") || args.includes("-v")) {
     if (args.includes("--format") && args.includes("json")) {
-      console.log(JSON.stringify({ version: BUILD_VERSION }));
+      console.log(JSON.stringify({ version }));
     } else {
-      console.log(`cora ${BUILD_VERSION}`);
+      console.log(`${appName} ${version}`);
     }
     process.exit(0);
   }
@@ -29,23 +35,23 @@ async function main() {
   // Handle help flag locally
   if (args.includes("--help") || args.includes("-h") || args.length === 0) {
     console.log(`
-CORA CLI v${BUILD_VERSION}
+${appName.toUpperCase()} CLI v${version}
 
 Usage:
-  cora login [--token TOKEN]    Authenticate with API token
-  cora logout                   Clear session
-  cora whoami [--format json]   Show current user
-  cora status [--format json]   Show account status
-  cora open                     Open dashboard in browser
-  cora prime [--format json]    Output agent instructions
-  cora context                  Output context for AI agents
-  cora todo <subcommand>        Manage todos
+  ${appName} <command> [options]
 
-Agent-Native Flags:
+Common Commands:
+  login                         Authenticate with the server
+  logout                        Clear session
+  whoami [--format json]        Show current user
+
+Options:
   --format json                 Output as JSON (for automation)
+  --help, -h                    Show this help
+  --version, -v                 Show version
 
 Environment:
-  CORA_API_TOKEN                Stateless auth (skips login)
+  TERMINALWIRE_URL              Override server URL (default: ${defaultUrl})
 
 Exit Codes:
   0  Success
@@ -53,17 +59,18 @@ Exit Codes:
   2  Authentication required
   3  Connection failed
   4  Server error
-
-Run 'cora <command> --help' for more information.
     `.trim());
     process.exit(0);
   }
+
+  // Allow URL override via environment variable
+  const url = process.env.TERMINALWIRE_URL || defaultUrl;
 
   // Connect and run
   let exitCode = 0;
 
   const send = await connect(
-    API_URL,
+    url,
     async (msg) => {
       if (msg.event === "resource") {
         const response = await handleResource(
@@ -81,22 +88,22 @@ Run 'cora <command> --help' for more information.
       process.exit(exitCode || (code === 1000 ? 0 : 1));
     }
   ).catch((err) => {
-    console.error(`Failed to connect to CORA server: ${err.message}`);
+    console.error(`Failed to connect: ${err.message}`);
     process.exit(3);
   });
 
   // Send initialization message
   send({
     event: "initialization",
-    protocol: { version: BUILD_VERSION },
+    protocol: { version },
     entitlement: {
-      authority: new URL(API_URL).hostname,
+      authority: new URL(url).hostname,
       schemes: [{ scheme: "https" }, { scheme: "http" }],
-      paths: [{ location: "~/.cora/**/*", mode: 0o600 }],
-      environment_variables: [{ name: "CORA_API_TOKEN" }, { name: "HOME" }],
+      paths: [{ location: "~/.terminalwire/**/*", mode: 0o600 }],
+      environment_variables: [{ name: "TERMINALWIRE_URL" }, { name: "HOME" }],
     },
     program: {
-      name: "cora",
+      name: appName,
       arguments: args,
     },
   });

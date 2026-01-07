@@ -1,11 +1,13 @@
 {
-  "name": "cora-cli",
+  "name": "terminalwire-bun",
   "version": "1.0.0",
+  "description": "Bun-based Terminalwire client - connect to any Terminalwire server",
   "type": "module",
   "scripts": {
     "dev": "bun run src/cli.ts",
     "build": "bun run scripts/build.ts",
-    "build:local": "bun build --compile --minify --define BUILD_VERSION='\"1.0.0-dev\"' --define API_URL='\"wss://cora.computer/terminal\"' ./src/cli.ts --outfile ./dist/cora"
+    "build:cora": "bun build --compile --minify --define BUILD_VERSION='\"1.0.0\"' --define DEFAULT_URL='\"wss://cora.computer/terminal\"' --define APP_NAME='\"cora\"' ./src/cli.ts --outfile ./dist/cora",
+    "build:cora-local": "bun build --compile --minify --define BUILD_VERSION='\"1.0.0-dev\"' --define DEFAULT_URL='\"ws://localhost:3000/terminal\"' --define APP_NAME='\"cora\"' ./src/cli.ts --outfile ./dist/cora-local"
   },
   "dependencies": {
     "@msgpack/msgpack": "^3.0.0"
