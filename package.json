@@ -3,14 +3,20 @@
   "version": "1.0.0",
   "description": "Bun-based Terminalwire client - connect to any Terminalwire server",
   "type": "module",
+  "bin": {
+    "terminalwire": "./src/cli.ts"
+  },
   "scripts": {
     "dev": "bun run src/cli.ts",
-    "build": "bun build --compile --minify --define BUILD_VERSION='\"1.0.0-dev\"' --define DEFAULT_URL='\"ws://localhost:3000/terminal\"' --define APP_NAME='\"cora\"' ./src/cli.ts --outfile ./dist/cora-local"
+    "build": "bun build --compile --minify --define BUILD_VERSION='\"1.0.0-dev\"' --define DEFAULT_URL='\"ws://localhost:3000/terminal\"' --define APP_NAME='\"cora\"' ./src/cli.ts --outfile ./dist/cora-local",
+    "check": "bun run --bun tsc --noEmit",
+    "test": "bun test"
   },
   "dependencies": {
     "@msgpack/msgpack": "^3.0.0"
   },
   "devDependencies": {
-    "bun-types": "latest"
+    "bun-types": "latest",
+    "typescript": "^5"
   }
 }
