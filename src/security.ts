@@ -54,12 +54,23 @@ export function validatePath(path: string): string {
  * Reads an environment variable if it's in the allowlist.
  *
  * @param name - The env var name to read
- * @returns The env var value or undefined
+ * @returns The env var value (with defaults for required vars)
  * @throws Error if env var is not in allowlist
  */
 export function readEnvVar(name: string): string | undefined {
   if (!ALLOWED_ENV_VARS.has(name)) {
     throw new Error(`Environment variable not allowed: ${name}`);
   }
-  return process.env[name];
+
+  const value = process.env[name];
+
+  // TERMINALWIRE_HOME is required by the server - provide default if not set
+  if (name === "TERMINALWIRE_HOME" && !value) {
+    const home = process.env.HOME;
+    if (home) {
+      return `${home}/.terminalwire`;
+    }
+  }
+
+  return value;
 }

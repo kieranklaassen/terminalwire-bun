@@ -32,24 +32,32 @@ export async function connect(
   onMessage: MessageHandler,
   onClose: CloseHandler
 ): Promise<SendFunction> {
+  const debug = process.env.TERMINALWIRE_DEBUG === "1";
+
   return new Promise((resolve, reject) => {
+    if (debug) console.error(`[DEBUG] Connecting to ${url}`);
+
     // Terminalwire requires the 'ws' subprotocol
     const socket = new WebSocket(url, ["ws"]);
     socket.binaryType = "arraybuffer";
 
     socket.onopen = () => {
+      if (debug) console.error("[DEBUG] WebSocket connected");
       // Return send function on successful connection
       resolve((data: Message) => {
+        if (debug) console.error(`[DEBUG] Sending: ${JSON.stringify(data).slice(0, 200)}`);
         socket.send(encode(data));
       });
     };
 
-    socket.onerror = () => {
+    socket.onerror = (err) => {
+      if (debug) console.error(`[DEBUG] WebSocket error: ${err}`);
       reject(new Error("Connection failed"));
     };
 
-    socket.onmessage = (event) => {
+    socket.onmessage = async (event) => {
       const buffer = event.data as ArrayBuffer;
+      if (debug) console.error(`[DEBUG] Received ${buffer.byteLength} bytes`);
 
       // Security: Reject oversized messages
       if (buffer.byteLength > MAX_MESSAGE_SIZE) {
@@ -57,11 +65,17 @@ export async function connect(
         return;
       }
 
-      const msg = decode(new Uint8Array(buffer)) as Message;
-      onMessage(msg);
+      try {
+        const msg = decode(new Uint8Array(buffer)) as Message;
+        if (debug) console.error(`[DEBUG] Decoded: ${JSON.stringify(msg).slice(0, 200)}`);
+        await onMessage(msg);
+      } catch (e) {
+        if (debug) console.error(`[DEBUG] Error handling message: ${e}`);
+      }
     };
 
     socket.onclose = (event) => {
+      if (debug) console.error(`[DEBUG] WebSocket closed: code=${event.code}`);
       onClose(event.code);
     };
   });
